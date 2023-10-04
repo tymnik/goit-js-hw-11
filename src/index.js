@@ -3,24 +3,10 @@ import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-
 const URL = 'https://pixabay.com/api/';
 const API_KEY = '39819981-fb7a960ba48529567676f3c81';
 
 const gallery = document.querySelector('.gallery');
-const options = {
-  captionsData: 'alt',
-  captionDelay: 250,
-};
-
-new SimpleLightbox('.gallery a', options);
-
-// let infScroll = new InfiniteScroll(gallery, {
-//   path: '.pagination__next',
-//   append: '.post',
-//   history: false,
-// });
-
 const loadMoreButton = document.querySelector('.load-more');
 let page = 1;
 
@@ -78,6 +64,13 @@ async function loadImages() {
 
           gallery.appendChild(photoCard);
         });
+
+        const options = {
+          captionsData: 'alt',
+          captionDelay: 250,
+        };
+
+        new SimpleLightbox('.gallery a', options);
 
         page++;
 
