@@ -18,6 +18,8 @@ function toggleLoadMoreButton(show) {
   }
 }
 
+toggleLoadMoreButton(false);
+
 async function loadImages() {
   try {
     const searchInput = document.getElementById('searchQuery').value;
@@ -33,6 +35,7 @@ async function loadImages() {
     if (response.status === 200) {
       const data = response.data;
       if (data.hits && data.hits.length > 0) {
+        Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images.`);
         data.hits.forEach(image => {
           const photoCard = document.createElement('div');
           photoCard.classList.add('photo-card');
@@ -72,8 +75,6 @@ async function loadImages() {
 
         new SimpleLightbox('.gallery a', options);
 
-        page++;
-
         if (page * 40 < data.totalHits) {
           toggleLoadMoreButton(true);
           const { height: cardHeight } =
@@ -84,8 +85,14 @@ async function loadImages() {
           });
         } else {
           toggleLoadMoreButton(false);
-          Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images.`);
         }
+
+        page++;
+      } else {
+        Notiflix.Notify.info(
+          `We're sorry, but you've reached the end of search results.`
+        );
+        toggleLoadMoreButton(false);
       }
     } else {
       throw new Error('Network response was not ok');
