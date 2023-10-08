@@ -3,9 +3,7 @@ import axios from 'axios';
 const URL = 'https://pixabay.com/api/';
 const API_KEY = '39819981-fb7a960ba48529567676f3c81';
 
-export let page = 1;
-
-export async function loadImages() {
+export async function loadImages(page) {
   try {
     const searchInput = document.getElementById('searchQuery').value;
     const queryParams = `?key=${API_KEY}&q=${encodeURIComponent(
