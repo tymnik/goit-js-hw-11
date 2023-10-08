@@ -7,3 +7,17 @@
     flex-wrap: wrap;
     justify-content: center;
 }
+
+body {
+    padding: 20px;
+}
+
+input:hover, input:focus {
+border: 1px solid orange;
+}
+
+button {
+    background-color: orange;
+    border: none;
+    cursor: pointer;
+   }

@@ -1,116 +1,96 @@
-import axios from 'axios';
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-const URL = 'https://pixabay.com/api/';
-const API_KEY = '39819981-fb7a960ba48529567676f3c81';
+import { page, loadImages, checkResponse } from './pixabay-api';
 
-const gallery = document.querySelector('.gallery');
-const loadMoreButton = document.querySelector('.load-more');
-let page = 1;
+import { loadMoreButton, toggleLoadMoreButton } from './load-btn';
 
-function toggleLoadMoreButton(show) {
-  if (show) {
-    loadMoreButton.style.display = 'block';
-  } else {
-    loadMoreButton.style.display = 'none';
-  }
-}
+document.addEventListener('DOMContentLoaded', async () => {
+  const gallery = document.querySelector('.gallery');
 
-toggleLoadMoreButton(false);
+  toggleLoadMoreButton(false);
 
-async function loadImages() {
-  try {
-    const searchInput = document.getElementById('searchQuery').value;
+  function createGallery(data) {
+    if (data.hits && data.hits.length > 0) {
+      Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images.`);
+      data.hits.forEach(image => {
+        const photoCard = document.createElement('div');
+        photoCard.classList.add('photo-card');
 
-    const queryParams = `?key=${API_KEY}&q=${encodeURIComponent(
-      searchInput
-    )}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=40`;
+        const imageElement = document.createElement('a');
+        imageElement.href = image.largeImageURL;
+        imageElement.classList.add('simplelightbox');
 
-    const requestUrl = URL + queryParams;
+        const imageThumbnail = document.createElement('img');
+        imageThumbnail.src = image.webformatURL;
+        imageThumbnail.alt = image.tags;
+        imageThumbnail.loading = 'lazy';
 
-    const response = await axios.get(requestUrl);
+        imageElement.appendChild(imageThumbnail);
 
-    if (response.status === 200) {
-      const data = response.data;
-      if (data.hits && data.hits.length > 0) {
-        Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images.`);
-        data.hits.forEach(image => {
-          const photoCard = document.createElement('div');
-          photoCard.classList.add('photo-card');
+        const infoDiv = document.createElement('div');
+        infoDiv.classList.add('info');
 
-          const imageElement = document.createElement('a');
-          imageElement.href = image.largeImageURL;
-          imageElement.classList.add('simplelightbox');
-
-          const imageThumbnail = document.createElement('img');
-          imageThumbnail.src = image.webformatURL;
-          imageThumbnail.alt = image.tags;
-          imageThumbnail.loading = 'lazy';
-
-          imageElement.appendChild(imageThumbnail);
-
-          const infoDiv = document.createElement('div');
-          infoDiv.classList.add('info');
-
-          const infoItems = ['Likes', 'Views', 'Comments', 'Downloads'];
-          infoItems.forEach(item => {
-            const infoItem = document.createElement('p');
-            infoItem.classList.add('info-item');
-            infoItem.innerHTML = `<b>${item}:</b> ${image[item.toLowerCase()]}`;
-            infoDiv.appendChild(infoItem);
-          });
-
-          photoCard.appendChild(imageElement);
-          photoCard.appendChild(infoDiv);
-
-          gallery.appendChild(photoCard);
+        const infoItems = ['Likes', 'Views', 'Comments', 'Downloads'];
+        infoItems.forEach(item => {
+          const infoItem = document.createElement('p');
+          infoItem.classList.add('info-item');
+          infoItem.innerHTML = `<b>${item}:</b> ${image[item.toLowerCase()]}`;
+          infoDiv.appendChild(infoItem);
         });
 
-        const options = {
-          captionsData: 'alt',
-          captionDelay: 250,
-        };
+        photoCard.appendChild(imageElement);
+        photoCard.appendChild(infoDiv);
 
-        new SimpleLightbox('.gallery a', options);
+        gallery.appendChild(photoCard);
+      });
 
-        if (page * 40 < data.totalHits) {
-          toggleLoadMoreButton(true);
-          const { height: cardHeight } =
-            gallery.firstElementChild.getBoundingClientRect();
-          window.scrollBy({
-            top: cardHeight * 2,
-            behavior: 'smooth',
-          });
-        } else {
-          toggleLoadMoreButton(false);
-        }
+      const options = {
+        captionsData: 'alt',
+        captionDelay: 250,
+      };
 
-        page++;
-      } else {
-        Notiflix.Notify.info(
-          `We're sorry, but you've reached the end of search results.`
-        );
-        toggleLoadMoreButton(false);
-      }
+      new SimpleLightbox('.gallery a', options);
     } else {
-      throw new Error('Network response was not ok');
+      Notiflix.Notify.info(
+        `We're sorry, but you've reached the end of search results.`
+      );
+      toggleLoadMoreButton(false);
     }
-  } catch (error) {
-    console.error('Error:', error);
+  }
+
+  loadMoreButton.addEventListener('click', async () => {
+    page++;
+    const data = await loadImages();
+    createGallery(data);
+    switchToggleLoadButton(data, gallery);
+  });
+
+  document
+    .getElementById('search-form')
+    .addEventListener('submit', async function (evt) {
+      evt.preventDefault();
+      page = 1;
+      toggleLoadMoreButton(false);
+      gallery.innerHTML = '';
+
+      const data = await loadImages();
+      createGallery(data);
+      switchToggleLoadButton(data, gallery);
+    });
+});
+
+function switchToggleLoadButton(data, gallery) {
+  if (page * 40 < data.totalHits) {
+    toggleLoadMoreButton(true);
+    const { height: cardHeight } =
+      gallery.firstElementChild.getBoundingClientRect();
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
+  } else {
+    toggleLoadMoreButton(false);
   }
 }
-
-loadMoreButton.addEventListener('click', loadImages);
-
-document
-  .getElementById('search-form')
-  .addEventListener('submit', async function (evt) {
-    evt.preventDefault();
-    page = 1;
-    toggleLoadMoreButton(false);
-    gallery.innerHTML = '';
-
-    loadImages();
-  });
